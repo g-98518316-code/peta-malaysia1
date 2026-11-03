@@ -1,0 +1,90 @@
+/**
+ * MISI JELAJAH MALAYSIA – PUZZLE TANGAN AJAIB
+ * Backend script untuk integrasi Google Sheets & Web App Deployment.
+ */
+
+// Nama Helaian khas untuk simpanan rekod
+var SHEET_NAME = "REKOD PEMAIN";
+
+/**
+ * Melayan permohonan HTTP GET untuk paparan Web App.
+ */
+function doGet() {
+  setupSheet(); // Pastikan helaian & tajuk lajur sedia ada
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
+    .setTitle('Misi Jelajah Malaysia - Puzzle Tangan Ajaib')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Menyediakan struktur helaian Google Sheets secara automatik.
+ */
+function setupSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+
+  // Jika helaian belum wujud, cipta helaian baharu
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+  }
+
+  // Jika baris pertama kosong, tambah tajuk lajur (Header Row)
+  if (sheet.getLastRow() === 0) {
+    var headers = [
+      "Tarikh & Masa",
+      "Nama Pemain",
+      "Kelas",
+      "Skor",
+      "Tempoh Masa",
+      "Baki Nyawa"
+    ];
+    sheet.appendRow(headers);
+    
+    // Format tajuk lajur
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setBackground("#003399");
+    headerRange.setFontColor("#FFFFFF");
+    headerRange.setFontWeight("bold");
+    headerRange.setHorizontalAlignment("center");
+  }
+}
+
+/**
+ * Menyimpan rekod keputusan pemain ke dalam Google Sheets.
+ * @param {Object} data - Objek yang mengandungi data keputusan pemain.
+ */
+function savePlayerRecord(data) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_NAME);
+
+    if (!sheet) {
+      setupSheet();
+      sheet = ss.getSheetByName(SHEET_NAME);
+    }
+
+    // Menyusun rekod baharu
+    var newRow = [
+      data.timestamp || new Date().toLocaleString('ms-MY'),
+      data.name,
+      data.playerClass,
+      data.score,
+      data.duration,
+      data.remainingLives
+    ];
+
+    sheet.appendRow(newRow);
+    
+    return {
+      status: "SUCCESS",
+      message: "Rekod pemain berjaya disimpan."
+    };
+  } catch (error) {
+    return {
+      status: "ERROR",
+      message: error.toString()
+    };
+  }
+}
